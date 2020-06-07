@@ -8,10 +8,16 @@ from src.server.GameStateService import GameStateService
 from src.server.GameInformation import GameInformation
 from src.server.GameManager import  GameManager
 
+import chess
+
 class GameWorker:
     def __init__(self, game_information:GameInformation=None, timer_state_service=None, score_state_service=None, game_manager:GameManager=None):
         self.game_information = game_information
-        self.game_state_service = GameStateService([[0]*9]*9)
+        empty_chess_board = chess.Board()
+        self.game_state_service = GameStateService({
+            "individual_one": empty_chess_board.fen(),
+            "individual_two": empty_chess_board.fen()
+        })
         self.timer_state_service = timer_state_service
         self.score_state_service = score_state_service
         self.game_manager = game_manager
@@ -19,8 +25,9 @@ class GameWorker:
         print("Starting Game Worker for ", game_information.name)
     async def open_connection(self):
         print("Opening connection")
-        self.connection = await websockets.serve(self.game_manager.register_player, self.game_information.server_domain, self.game_information.port)
-        self.game_manager.set_connection_object(self.connection)
+        self.game_connection = await websockets.serve(self.game_manager.register_player, self.game_information.server_domain, self.game_information.port)
+        self.stream_connection = await websockets.serve(self.game_manager)
+        self.game_manager.set_connection_object(self.game_connection)
 
     async def run(self):
         print("Running the game event loop")

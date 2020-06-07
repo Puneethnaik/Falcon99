@@ -1,7 +1,8 @@
 import websockets
-import asyncio
 import os
 import json
+import chess
+
 class FalconClient:
     def __init__(self, server_domain, port, resource_name):
         self.server_domain = server_domain
@@ -19,7 +20,7 @@ class FalconClient:
         while True:
             message = await self.connection.recv()
             print("The message recieved is", message)
-            await self.connection.send(json.dumps([[1]*9]*9))
+            await self.connection.send(json.dumps(chess.Board().fen()))
 
     def prepare_uri(self):
         '''
