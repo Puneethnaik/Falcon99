@@ -2,6 +2,7 @@
 import asyncio
 import websockets
 import os
+import json
 
 #Falcon Imports
 from src.server.GameStateService import GameStateService
@@ -25,19 +26,19 @@ class GameWorker:
         print("Starting Game Worker for ", game_information.name)
     async def open_connection(self):
         print("Opening connection")
-        self.game_connection = await websockets.serve(self.game_manager.register_player, self.game_information.server_domain, self.game_information.port)
-        self.stream_connection = await websockets.serve(self.game_manager)
-        self.game_manager.set_connection_object(self.game_connection)
+        self.game_connection = await websockets.serve(self.game_manager.register_player, self.game_information.server_domain, self.game_information.game_port)
+        self.stream_connection = await websockets.serve(self.game_manager.register_streamer, self.game_information.server_domain, self.game_information.stream_port)
+        # self.game_manager.set_connection_object()
 
     async def run(self):
         print("Running the game event loop")
         while(True):
             #Game event loop
             player = self.game_manager.get_player("first_player")
-            await player.get("websocket").send("Make Turn")
+            await player.get("websocket").send(json.dumps(self.game_state_service.get_state()))
             action = await player.get("websocket").recv()
             print("Recieved action", action)
-            self.game_state_service.update_state(action)
+            self.game_state_service.update_state(json.loads(action))
             # self.game_state_service.update_state(self.game_manager.get_second_player().make_turn())
             if self.has_achieved_winning_state(self.game_state_service.state):
                 break
@@ -54,7 +55,7 @@ class GameWorker:
         uri = "ws://" + os.path.join(self.server_domain + ":" + str(self.port), self.resource_name)
         return uri
 
-game_information = GameInformation(port=4000, server_domain="localhost", service_name="NQueensGame", name="NQueensGame", description="This is a N Queens Game")
+game_information = GameInformation(game_port=4000, stream_port=5000, server_domain="localhost", service_name="NQueensGame", name="NQueensGame", description="This is a N Queens Game")
 game_manager = GameManager()
 game_worker = GameWorker(game_information=game_information, game_manager=game_manager)
 

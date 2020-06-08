@@ -8,5 +8,5 @@ class GameStateService:
     def update_state(self, state):
         self.state = state
 
-    def get_state(self, state):
+    def get_state(self):
         return self.state
