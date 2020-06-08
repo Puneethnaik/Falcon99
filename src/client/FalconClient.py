@@ -26,6 +26,11 @@ class NQueensSolver:
                     number_of_clashing_queens += 1
         number_of_clashing_queens = number_of_clashing_queens / 2
         return 1 / (1 + number_of_clashing_queens)
+    def next_generation(self):
+        #choose the two best individuals
+        adam = self.population[-1]
+        eve = self.population[-2]
+        
     def create_random_chromosome(self):
         return [random.randint(1, self.size_of_chess_board) for _ in range(self.number_of_queens)]
 
