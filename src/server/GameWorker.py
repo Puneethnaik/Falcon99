@@ -55,7 +55,7 @@ class GameWorker:
         uri = "ws://" + os.path.join(self.server_domain + ":" + str(self.port), self.resource_name)
         return uri
 
-game_information = GameInformation(game_port=4000, stream_port=5000, server_domain="localhost", service_name="NQueensGame", name="NQueensGame", description="This is a N Queens Game")
+game_information = GameInformation(game_port=4000, stream_port=5000, server_domain="192.168.0.105", service_name="NQueensGame", name="NQueensGame", description="This is a N Queens Game")
 game_manager = GameManager()
 game_worker = GameWorker(game_information=game_information, game_manager=game_manager)
 
