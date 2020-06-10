@@ -15,9 +15,12 @@ class GameWorker:
     def __init__(self, game_information:GameInformation=None, timer_state_service=None, score_state_service=None, game_manager:GameManager=None):
         self.game_information = game_information
         empty_chess_board = chess.Board()
+        # self.game_state_service = GameStateService({
+        #     "individual_one": empty_chess_board.fen(),
+        #     "individual_two": empty_chess_board.fen()
+        # })
         self.game_state_service = GameStateService({
-            "individual_one": empty_chess_board.fen(),
-            "individual_two": empty_chess_board.fen()
+            "fen": empty_chess_board.fen()
         })
         self.timer_state_service = timer_state_service
         self.score_state_service = score_state_service
