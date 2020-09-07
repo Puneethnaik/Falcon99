@@ -1,6 +1,14 @@
 from src.server.FalconServer import FalconServer
 from src.server.GameInformation import GameInformation
 
+import asyncio
 server = FalconServer()
-game_information = GameInformation(port=4000, server_domain="192.168.0.105", service_name="NQueensGame", name="N Queens Puzzle", description="This is a N Queens Game")
+game_information = GameInformation(service_name="NQueensGame",
+                                   game_port=4000,
+                                   stream_port=5000,
+                                   server_domain="localhost",
+                                   name="N Queens Puzzle",
+                                   description="This is a N Queens Game")
 server.register_game(game_information)
+asyncio.get_event_loop().run_until_complete(asyncio.gather(server.create_game_manager("NQueensGame"), server.create_game_manager("NQueensGame"), server.create_game_manager("NQueensGame")))
+

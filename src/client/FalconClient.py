@@ -107,17 +107,20 @@ class StockFishClient:
     def __init__(self):
         self.engine = stockfish.Stockfish()
     def set_position(self, fen):
+        print("Setting %s as the fen of the board"%{fen})
         self.engine.set_fen_position(fen)
     def make_move(self):
         best_move = self.engine.get_best_move()
+        print("The best move is", best_move)
         self.engine.set_position([best_move])
-        self.engine.get_fen_position()
+        return self.engine.get_fen_position()
 
 class FalconClient:
-    def __init__(self, server_domain, port, resource_name):
+    def __init__(self, server_domain, port, resource_name, game_manager_id):
         self.server_domain = server_domain
         self.port = port
         self.resource_name = resource_name
+        self.game_manager_id = game_manager_id
         self.stockfish_solver = StockFishClient()
         # self.nqueens_solver = NQueensSolver(number_of_queens=8, initial_population_size=1000)
     async def connect(self):
@@ -139,7 +142,8 @@ class FalconClient:
             #         "chromosome": self.nqueens_solver.convert_chromosome_to_FEN(self.nqueens_solver.population[i]),
             #         "fitness": self.nqueens_solver.fitness(self.nqueens_solver.population[i])
             #     }
-            self.stockfish_solver.set_position(message["fen"])
+            game_state = json.loads(message)
+            self.stockfish_solver.set_position(game_state["fen"])
             game_state = {}
             game_state["fen"] = self.stockfish_solver.make_move()
 
@@ -157,5 +161,5 @@ class FalconClient:
         information passed in the constructor
         :return: URI as a string
         '''
-        uri = "ws://" + os.path.join(self.server_domain + ":" + str(self.port), self.resource_name)
+        uri = "ws://" + os.path.join(self.server_domain + ":" + str(self.port), self.game_manager_id, self.resource_name)
         return uri
