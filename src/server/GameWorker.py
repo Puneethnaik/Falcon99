@@ -7,6 +7,7 @@ import json
 # Falcon Imports
 from src.server.GameInformation import GameInformation
 from src.server.GameManager import GameManager
+from examples.ChessGameManager import ChessGameManager
 
 
 class GameWorker:
@@ -36,17 +37,21 @@ class GameWorker:
                                                         self.game_information.stream_port)
 
     def find_game_manager_given_path(self, path):
-        _, game_manager_id, resource_name = path.split('/')
+        _, game_manager_id, resource_name, player_id = path.split('/')
+        print("The path recieved is", path)
         for game_manager in self.game_managers:
-            if game_manager.id == game_manager_id:
+            print(game_manager)
+            if game_manager.game_manager_id == int(game_manager_id):
                 return True, game_manager
         return False, None
 
     async def game_connection_callback(self, websocket, path):
         _find_game_manager_given_path = self.find_game_manager_given_path(path)
+        *_, player_id = path.split('/')
         if _find_game_manager_given_path[0]:
             print("Access check with game manager and passing control to the game manager")
-            _find_game_manager_given_path[1].register_player(websocket, path)
+            print("The type of the game manager is", type(_find_game_manager_given_path[1]))
+            await _find_game_manager_given_path[1].register_player(websocket, player_id, path)
         else:
             print("Game manager requested by the client is not found. Please contact the game admin.")
 
@@ -62,15 +67,27 @@ class GameWorker:
         uri = "ws://" + os.path.join(self.server_domain + ":" + str(self.port), self.resource_name)
         return uri
 
+    def return_correct_game_manager_instance(self, service_name, game_manager_json):
+        if service_name.strip() == 'NQueensGame':
+            print("Initiating chess game manager instance")
+            return ChessGameManager(**json.loads(game_manager_json))
+        else:
+            print("Returning none")
+            return None
+
     async def check_for_game_manager(self):
         self.worker_conn_stream = await self.worker_conn.open(asyncio.get_event_loop())
         while True:
             print("Checking for game manager from server process")
-            game_manager_json = await self.worker_conn_stream.readline()
-            print("Recieved %s from server process" % (game_manager_json))
-            game_manager = GameManager(**json.loads(game_manager_json))
+            server_message_json = await self.worker_conn_stream.readline()
+            server_message_json = server_message_json.decode('UTF-8')
+            # print("Recieved %s from server process" % (server_message_json))
+            game_manager_json, service_name = server_message_json.split('|')
+            game_manager = self.return_correct_game_manager_instance(service_name=service_name, game_manager_json=game_manager_json)
+            # print("The type of game manager is", type(game_manager))
             self.game_managers.append(game_manager)
-            asyncio.get_event_loop().call_soon(game_manager.run)
+            # asyncio.gather(game_manager.run())
+            await asyncio.gather(game_manager.run())
 
 
 def run_game_worker(worker_conn, game_information):

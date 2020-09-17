@@ -1,3 +1,5 @@
+from src.server.CustomEncoder import CustomEncoder
+import json
 class GameStateService:
     '''
         This class deals with the creation, updation, retrieval and disposal of game state.
@@ -10,3 +12,6 @@ class GameStateService:
 
     def get_state(self):
         return self.state
+
+    def toJSON(self):
+        return json.dumps(self.__dict__, cls=CustomEncoder)

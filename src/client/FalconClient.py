@@ -106,22 +106,26 @@ class NQueensSolver:
 class StockFishClient:
     def __init__(self):
         self.engine = stockfish.Stockfish()
-    def set_position(self, fen):
-        print("Setting %s as the fen of the board"%{fen})
-        self.engine.set_fen_position(fen)
+    def set_position(self, moves):
+        print("Setting as the fen of the board", moves)
+        self.engine.set_position(moves)
+        print(self.engine.get_board_visual())
     def make_move(self):
         best_move = self.engine.get_best_move()
         print("The best move is", best_move)
-        self.engine.set_position([best_move])
-        return self.engine.get_fen_position()
+        # self.engine.set_position([best_move])
+        # print(self.engine.get_board_visual())
+        return best_move
 
 class FalconClient:
-    def __init__(self, server_domain, port, resource_name, game_manager_id):
+    def __init__(self, server_domain, port, resource_name, game_manager_id, player_id):
         self.server_domain = server_domain
         self.port = port
         self.resource_name = resource_name
         self.game_manager_id = game_manager_id
         self.stockfish_solver = StockFishClient()
+        self.player_id = player_id
+        self.moves = []
         # self.nqueens_solver = NQueensSolver(number_of_queens=8, initial_population_size=1000)
     async def connect(self):
         uri = self.prepare_uri()
@@ -129,12 +133,12 @@ class FalconClient:
         try:
             self.connection = await websockets.connect(uri)
             await self.run()
-        except Exception as e:
+        except websockets.ConnectionClosed as e:
             print("Could not connect to the server. Details", e)
     async def run(self):
         while True:
             message = await self.connection.recv()
-            print("The message recieved is", message)
+            print("[%s %s]The message recieved is %s" % (self.game_manager_id, self.player_id, message))
             # self.nqueens_solver.next_generation()
             # game_state = {}
             # for i in range(len(self.nqueens_solver.population)):
@@ -143,16 +147,19 @@ class FalconClient:
             #         "fitness": self.nqueens_solver.fitness(self.nqueens_solver.population[i])
             #     }
             game_state = json.loads(message)
-            self.stockfish_solver.set_position(game_state["fen"])
+            self.stockfish_solver.set_position(game_state["moves"])
+            self.moves = game_state["moves"]
             game_state = {}
-            game_state["fen"] = self.stockfish_solver.make_move()
+            self.moves.append(self.stockfish_solver.make_move())
+            game_state["moves"] = self.moves
 
             # chess_board = chess.Board(game_state.get("individual_one"))
             # print(random.choice(list(chess_board.legal_moves)))
             # chess_board.push(random.choice(list(chess_board.legal_moves)))
             # game_state["individual_one"] = chess_board.fen()
 
-            await asyncio.sleep(1)
+            # await asyncio.sleep(1)
+            print("Sending this state to server", game_state)
             await self.connection.send(json.dumps(game_state))
 
     def prepare_uri(self):
@@ -161,5 +168,5 @@ class FalconClient:
         information passed in the constructor
         :return: URI as a string
         '''
-        uri = "ws://" + os.path.join(self.server_domain + ":" + str(self.port), self.game_manager_id, self.resource_name)
+        uri = "ws://" + os.path.join(self.server_domain + ":" + str(self.port), self.game_manager_id, self.resource_name, self.player_id)
         return uri

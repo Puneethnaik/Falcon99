@@ -10,5 +10,8 @@ game_information = GameInformation(service_name="NQueensGame",
                                    name="N Queens Puzzle",
                                    description="This is a N Queens Game")
 server.register_game(game_information)
-asyncio.get_event_loop().run_until_complete(asyncio.gather(server.create_game_manager("NQueensGame"), server.create_game_manager("NQueensGame"), server.create_game_manager("NQueensGame")))
+game_managers = []
+for i in range(1):
+    game_managers.append(server.create_game_manager("NQueensGame"))
+asyncio.get_event_loop().run_until_complete(asyncio.gather(*game_managers))
 

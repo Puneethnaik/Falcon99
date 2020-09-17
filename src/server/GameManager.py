@@ -2,31 +2,37 @@ import asyncio
 import json
 import websockets
 import uuid
-from json import JSONEncoder
+from src.server.CustomEncoder import CustomEncoder
 
 class GameManager:
-    def __init__(self, id=None, players={}, streamers={}, game_state_service=None, streamer_count=1, start_time='', connection=None):
-        self.id = id
+    def __init__(self, game_manager_id=None, player_mapping={}, players={}, streamers={}, game_state_service=None, streamer_count=1, start_time='', connection=None):
+        self.game_manager_id = game_manager_id
         self.players = players
         self.streamers = streamers
         self.game_state_service = game_state_service
         self.streamer_count = streamer_count
         self.start_time = start_time
         self.connection = connection
+        self.player_mapping = player_mapping
 
     def __str__(self):
-        return "<Game Manager id=%s>" % self.id
+        return "<Game Manager id=%s>" % self.game_manager_id
 
-    async def register_player(self, websocket, path):
+    async def register_player(self, websocket, id, path):
         #TODO add logic to check the player credentials against a persisted list of participants
-        self.players["first_player"] = {
-            "websocket": websocket
-        }
-        if self.are_all_players_registered():
-            await self.run()
+        player_name = self.player_mapping.get(id, None)
+        if player_name is not None:
+            self.players[player_name] = {
+                "websocket": websocket
+            }
+            print("The access is successfully granted.", self.players)
+        else:
+            print("The access cannot be granted.")
+        while(True):
+            await asyncio.sleep(0)
 
     def run(self):
-        print("Running the empty implementation")
+        raise NotImplementedError("Not Implemented.")
 
     def has_achieved_winning_state(self, game_state):
         return False
@@ -52,11 +58,11 @@ class GameManager:
                 del self.streamers[streamer]
             await asyncio.sleep(1)
 
-    def are_all_players_registered(self):
-        return ("first_player" in self.players.keys()) and ("second_player" in self.players.keys())
-
     def get_player(self, player_name):
         return self.players.get(player_name, None)
 
     def set_connection_object(self, connection):
         self.connection = connection
+
+    def toJSON(self):
+        return json.dumps(self.__dict__, cls=CustomEncoder)
